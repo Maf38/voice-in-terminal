@@ -1,0 +1,112 @@
+{
+  "name": "voice-in-terminal",
+  "displayName": "Voice in Terminal",
+  "description": "Dictate voice commands and insert them into your terminal using Whisper",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "voiceInTerminal.toggleRecording",
+        "title": "Voice in Terminal: Toggle Recording"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "voiceInTerminal.toggleRecording",
+        "key": "ctrl+x",
+        "mac": "cmd+x",
+        "when": "!editorHasSelection"
+      }
+    ],
+    "configuration": {
+      "title": "Voice in Terminal",
+      "properties": {
+        "voiceInTerminal.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable the extension"
+        },
+        "voiceInTerminal.language": {
+          "type": "string",
+          "default": "fr",
+          "description": "Language for speech recognition (e.g., 'fr', 'en', 'es')"
+        },
+        "voiceInTerminal.whisperMode": {
+          "type": "string",
+          "default": "local",
+          "enum": ["local", "api"],
+          "description": "Use local Whisper installation or OpenAI API"
+        },
+        "voiceInTerminal.whisperModel": {
+          "type": "string",
+          "default": "base",
+          "enum": ["tiny", "base", "small", "medium", "large"],
+          "description": "Whisper model to use (local mode only)"
+        },
+        "voiceInTerminal.whisperApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API key for Whisper API mode"
+        },
+        "voiceInTerminal.maxRecordingTime": {
+          "type": "number",
+          "default": 300,
+          "description": "Maximum recording time in seconds"
+        },
+        "voiceInTerminal.showNotifications": {
+          "type": "string",
+          "default": "errors",
+          "enum": ["all", "errors", "none"],
+          "description": "When to show notifications"
+        },
+        "voiceInTerminal.autoCapitalize": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically capitalize first letter of transcribed text"
+        },
+        "voiceInTerminal.showPreview": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show preview modal before inserting text (v1.1+)"
+        },
+        "voiceInTerminal.autoSend": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically send command after insertion (v1.1+)"
+        },
+        "voiceInTerminal.audioDeviceName": {
+          "type": "string",
+          "default": "",
+          "description": "Audio input device name for Windows (e.g., 'Microphone (K66)'). Leave empty to use default device. Use 'sox -V6 -n -t waveaudio test' to list devices."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.x",
+    "@typescript-eslint/parser": "^6.x",
+    "eslint": "^8.x",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "node-record-lpcm16": "^1.0.1"
+  }
+}
