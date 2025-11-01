@@ -1,6 +1,7 @@
 .vscode/**
 .vscode-test/**
 src/**
+tests/**
 .gitignore
 .yarnrc
 vsc-extension-quickstart.md
@@ -8,4 +9,11 @@ vsc-extension-quickstart.md
 **/.eslintrc.json
 **/*.map
 **/*.ts
-node_modules/**
+.claude/**
+claude-conversation-backup/**
+*.tar.gz
+list-audio-devices.js
+CLAUDE.MD
+PUBLISHING.md
+node_modules/**/.bin/**
+.DS_Store

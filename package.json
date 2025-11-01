@@ -1,14 +1,34 @@
 {
   "name": "voice-in-terminal",
   "displayName": "Voice in Terminal",
-  "description": "Dictate voice commands and insert them into your terminal using Whisper",
+  "description": "Voice-to-text transcription - Speak your commands and insert them anywhere!",
   "version": "0.1.0",
+  "publisher": "YOUR_PUBLISHER_ID",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "voice",
+    "speech",
+    "transcription",
+    "whisper",
+    "dictation",
+    "accessibility",
+    "ai",
+    "audio"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/voice-in-terminal.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YOUR_USERNAME/voice-in-terminal/issues"
+  },
+  "homepage": "https://github.com/YOUR_USERNAME/voice-in-terminal#readme",
+  "license": "MIT",
   "activationEvents": [
     "onStartupFinished"
   ],

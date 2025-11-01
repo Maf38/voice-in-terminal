@@ -1,283 +1,280 @@
-# Voice in Terminal - Extension VS Code
+# Voice in Terminal
 
-## Vue d'ensemble
+> 🎤 Voice-to-text transcription for VS Code - Speak your commands and insert them anywhere!
 
-Extension VS Code permettant de dicter des commandes vocales en français et de les insérer automatiquement dans le terminal Claude Code actif.
+Dictate text in French (or any language) and automatically insert it into your active editor or terminal. Perfect for interacting with AI coding assistants like Claude Code.
 
-## Spécifications fonctionnelles
+## ✨ Features
 
-### 1. Fonctionnalités principales
+- 🎙️ **Voice recording** with visual indicator in status bar
+- 🤖 **Local transcription** using Whisper.cpp (free, no API key required)
+- 🌍 **Multi-language support** (French by default, configurable)
+- ⌨️ **Keyboard shortcut** (Ctrl+Shift+V / Cmd+Shift+V)
+- 📋 **Auto-paste** into active editor or input field
+- 🔒 **Privacy-first** - everything runs locally
+- 🖥️ **Cross-platform** - Windows, Linux, macOS
 
-#### 1.1 Enregistrement vocal
-- **Déclenchement** :
-  - Raccourci clavier configurable (par défaut : `Ctrl+X` / `Cmd+X`)
-  - Bouton dans la barre d'état VS Code
-  - Icône micro dans la barre latérale (optionnel)
+## 📦 Installation
 
-- **États** :
-  - **Inactif** : L'extension attend l'activation
-  - **En enregistrement** : L'utilisateur parle, l'audio est capturé
-  - **En traitement** : Transcription en cours via Whisper
-  - **Terminé** : Texte inséré dans le terminal
+### 1. Install the Extension
 
-- **Arrêt de l'enregistrement** :
-  - Appui sur le même raccourci clavier
-  - Clic sur le bouton de la barre d'état
-  - Timeout configurable (par défaut : 300 secondes / 5 minutes)
-
-#### 1.2 Indicateurs visuels
-
-- **Barre d'état** :
-  - Icône micro grisé : inactif
-  - Icône micro rouge + animation pulse : en enregistrement
-  - Icône micro jaune + spinner : transcription en cours
-  - Icône micro vert (flash rapide) : texte inséré avec succès
-
-- **Notification** (optionnel, configurable) :
-  - Message de confirmation après insertion
-  - Message d'erreur si échec
-
-#### 1.3 Transcription
-
-- **Moteur** : Whisper en local
-  - Modèle : `base` (par défaut, configurable : tiny/base/small/medium)
-  - Langue : Français (configurable)
-  - Précision attendue : >90% pour phrases claires
-
-- **Post-traitement** :
-  - Trim des espaces en début/fin
-  - Capitalisation de la première lettre (optionnel)
-  - Pas d'envoi automatique (pas de touche Entrée), l'utilisateur valide manuellement
-
-#### 1.4 Preview et correction (optionnel)
-
-- **Modal de preview** (v1.1+, configurable) :
-  - Affiche le texte transcrit dans une popup modale
-  - Permet de corriger avant insertion
-  - Boutons : "Insert" / "Insert & Send" / "Cancel"
-  - Mode "Insert & Send" : insère + appuie sur Entrée automatiquement
-
-- **Mode direct** (par défaut v1.0) :
-  - Pas de preview, insertion immédiate
-  - Plus rapide pour un workflow fluide
-
-#### 1.5 Insertion dans le terminal
-
-- **Cible** :
-  - Terminal Claude Code actif (focus)
-  - Si plusieurs terminaux ouverts : celui ayant le focus
-  - Si aucun terminal actif : ouvrir un nouveau terminal Claude
-  - Compatible avec VS Code Remote/SSH (terminal distant)
-
-- **Comportement** :
-  - Le texte est inséré à la position du curseur
-  - Pas d'envoi automatique par défaut (l'utilisateur peut éditer avant de valider)
-  - Le curseur reste à la fin du texte inséré
-  - Mode "Insert & Send" (optionnel) : insère + valide automatiquement
-
-### 2. Configuration utilisateur
-
-Paramètres dans les settings VS Code (`settings.json`) :
-
-```json
-{
-  "voiceInTerminal.enabled": true,
-  "voiceInTerminal.language": "fr",
-  "voiceInTerminal.whisperMode": "local",
-  "voiceInTerminal.whisperModel": "base",
-  "voiceInTerminal.whisperApiKey": "",
-  "voiceInTerminal.maxRecordingTime": 300,
-  "voiceInTerminal.showNotifications": "errors",
-  "voiceInTerminal.keyboardShortcut": "ctrl+x",
-  "voiceInTerminal.autoCapitalize": false,
-  "voiceInTerminal.targetTerminal": "claudeCode",
-  "voiceInTerminal.showPreview": false,
-  "voiceInTerminal.autoSend": false
-}
-```
-
-### 3. Workflow utilisateur
-
-```
-1. Utilisateur appuie sur Ctrl+X
-   ↓
-2. Barre d'état affiche icône micro rouge (pulse)
-   ↓
-3. Utilisateur parle : "Crée un fichier package.json avec express"
-   ↓
-4. Utilisateur appuie à nouveau sur Ctrl+X (ou attend timeout de 5 minutes)
-   ↓
-5. Barre d'état affiche icône jaune (spinner) "Transcription..."
-   ↓
-6. Whisper transcrit l'audio
-   ↓
-7. Texte inséré dans le terminal Claude actif
-   ↓
-8. Barre d'état flash vert puis retour à l'icône grisé
-   ↓
-9. Utilisateur lit/édite le texte et appuie sur Entrée manuellement
-```
-
-### 4. Gestion des erreurs
-
-- **Micro non disponible** : Notification d'erreur + instructions
-- **Whisper non installé** : Guide d'installation automatique
-- **Échec de transcription** : Notification + possibilité de réessayer
-- **Pas de terminal actif** : Création automatique d'un terminal Claude
-- **Audio vide/silence** : Notification "Aucun son détecté"
-
-### 5. Installation et prérequis
-
-#### 5.1 Installation de l'extension
+#### From Source (Development)
 ```bash
-# Via VSIX (après build)
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/voice-in-terminal.git
+cd voice-in-terminal
+
+# Install dependencies
+npm install
+
+# Compile
+npm run compile
+
+# Package the extension
+npx vsce package
+
+# Install in VS Code
 code --install-extension voice-in-terminal-0.1.0.vsix
 ```
 
-#### 5.2 Installation de Whisper
+#### From VS Code Marketplace (Coming Soon)
+Search for "Voice in Terminal" in the Extensions view (Ctrl+Shift+X).
 
-L'extension propose **trois options** :
+### 2. Install Whisper.cpp
 
-**Option A : Whisper API (OpenAI)** - Recommandée pour SSH/Remote
-- Aucune installation requise
-- Fonctionne partout (local, SSH, WSL, Remote)
-- Payant : ~$0.006/minute (~$0.30/mois pour usage normal)
-- Configuration : ajouter `voiceInTerminal.whisperApiKey` dans settings
+The extension uses [whisper.cpp](https://github.com/ggerganov/whisper.cpp) for local voice transcription.
 
-**Option B : whisper.cpp** - Recommandé pour usage local
-- Installation automatique proposée par l'extension au premier lancement
-- Gratuit, rapide, performant
-- Nécessite compilation (gcc/make)
-- **Important SSH** : doit être installé sur la machine où VS Code s'exécute
+#### Windows
+```powershell
+# Install using winget (recommended)
+winget install ggerganov.whisper.cpp
 
-**Option C : faster-whisper (Python)**
-- Installation : `pip install faster-whisper`
-- Gratuit, très rapide avec GPU
-- **Important SSH** : doit être installé sur la machine où VS Code s'exécute
-
-#### 5.3 Cas d'usage SSH/Remote
-
-Pour VS Code Remote/SSH, **deux architectures possibles** :
-
-**Architecture 1 : API Whisper (recommandée)**
-```
-Machine locale (micro) → Extension (local) → API Whisper → Texte → Terminal SSH distant
-```
-- Simple, fonctionne partout
-- Coût minimal (~$0.30/mois)
-
-**Architecture 2 : Whisper local**
-```
-Machine locale (micro) → Extension (local) → Whisper (local) → Texte → Terminal SSH distant
-```
-- Gratuit mais nécessite Whisper installé localement
-- L'extension s'exécute en mode "hybrid" : capture audio en local, transcrit en local, envoie le texte au remote
-
-L'extension détecte automatiquement le contexte (local vs remote) et propose la configuration appropriée.
-
-### 6. Architecture technique
-
-```
-Extension VS Code (TypeScript)
-    ↓
-Commande "voiceInTerminal.startRecording"
-    ↓
-Audio Recorder (Node.js - node-record-lpcm16)
-    ↓
-Fichier WAV temporaire
-    ↓
-Whisper Local (subprocess)
-    ↓
-Texte transcrit
-    ↓
-VS Code Terminal API (sendText)
+# Or build from source
+git clone https://github.com/ggerganov/whisper.cpp
+cd whisper.cpp
+cmake -B build -DWHISPER_BUILD_EXAMPLES=ON
+cmake --build build --config Release
 ```
 
-### 7. Performances attendues
+#### Linux/macOS
+```bash
+# Clone and build
+git clone https://github.com/ggerganov/whisper.cpp
+cd whisper.cpp
+make
 
-- **Latence d'enregistrement** : <100ms (démarrage)
-- **Latence de transcription** : 1-5 secondes (selon modèle et longueur)
-  - Modèle `tiny` : ~0.5-2s pour 10s d'audio
-  - Modèle `base` : ~1-3s pour 10s d'audio
-  - Modèle `small` : ~2-5s pour 10s d'audio
-- **RAM utilisée** :
-  - Extension : ~50-100 MB
-  - Whisper `base` : ~500 MB-1 GB pendant transcription
+# The executable will be at: ./main or ./whisper-cli
+```
 
-### 8. Compatibilité
+### 3. Download a Whisper Model
 
-- **VS Code** : ≥1.85.0
-- **Modes** :
-  - Local (direct)
-  - Remote SSH ✅
-  - WSL
-  - Dev Containers
-- **Systèmes** :
-  - Linux (testé)
-  - macOS (à tester)
-  - Windows (à tester)
-- **Node.js** : ≥16.0.0
-- **Microphone** : Requis (sur la machine où l'extension capture l'audio)
+Download at least the `tiny` model (fastest) or `base` model (better accuracy):
 
-### 9. Roadmap
+```bash
+# From the whisper.cpp directory
+bash ./models/download-ggml-model.sh tiny    # ~75 MB, fastest
+bash ./models/download-ggml-model.sh base    # ~142 MB, recommended
+bash ./models/download-ggml-model.sh small   # ~466 MB, better accuracy
+```
 
-**v1.0 - MVP** (première version)
-- ✅ Enregistrement vocal avec Ctrl+X
-- ✅ Transcription Whisper (local ou API)
-- ✅ Insertion directe dans terminal Claude
-- ✅ Indicateur visuel barre d'état
-- ✅ Support SSH/Remote avec API Whisper
+### 4. Install SoX (Audio Recording)
 
-**v1.1 - Preview & Validation**
-- Modal de preview pour corriger avant insertion
-- Mode "Insert & Send" (auto-validation)
-- Notifications configurables
+#### Windows
+```powershell
+# Using Chocolatey
+choco install sox.portable
 
-**v2.0 - Fonctionnalités avancées**
-- Support multi-langues avec détection automatique
-- Commandes vocales spéciales (ex: "nouvelle ligne", "effacer tout")
-- Historique des transcriptions
-- Mode streaming (transcription en temps réel)
-- Support des terminaux standards (pas seulement Claude)
+# Or download from: https://sourceforge.net/projects/sox/
+```
 
-### 10. Sécurité et confidentialité
+#### Linux (Ubuntu/Debian)
+```bash
+sudo apt-get install sox
+```
 
-- **Mode local** : Tout fonctionne en local (aucune donnée envoyée sur internet)
-- **Mode API** : Audio envoyé à OpenAI (conforme à leur politique de confidentialité)
-- Fichiers audio temporaires supprimés après transcription
-- Aucune collecte de télémétrie
-- Open source
-- Clé API stockée de manière sécurisée dans les settings VS Code
+#### macOS
+```bash
+brew install sox
+```
+
+## 🚀 Usage
+
+### Quick Start
+
+1. **Press `Ctrl+Shift+V`** (Windows/Linux) or `Cmd+Shift+V` (macOS)
+2. **Speak** your text (status bar shows red microphone)
+3. **Press `Ctrl+Shift+V` again** to stop recording
+4. **Wait** for transcription (status bar shows yellow processing indicator)
+5. **Text is automatically pasted** into your active editor
+
+### Configuration
+
+Open VS Code Settings (Ctrl+,) and search for "Voice in Terminal":
+
+```json
+{
+  // Whisper model: "tiny", "base", "small", "medium", "large"
+  "voiceInTerminal.whisperModel": "tiny",
+
+  // Language code (ISO 639-1)
+  "voiceInTerminal.language": "fr",
+
+  // Custom Whisper executable path (auto-detected if not set)
+  "voiceInTerminal.whisperPath": "",
+
+  // Custom microphone device name (auto-detected if not set)
+  "voiceInTerminal.audioDevice": "",
+
+  // Maximum recording time in seconds
+  "voiceInTerminal.maxRecordingTime": 300
+}
+```
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+V` (Win/Linux)<br>`Cmd+Shift+V` (macOS) | Start/Stop recording |
+
+You can customize the shortcut in **Keyboard Shortcuts** (Ctrl+K Ctrl+S):
+- Search for "Voice in Terminal: Start/Stop Recording"
+- Assign your preferred key binding
+
+## 🔧 Troubleshooting
+
+### Whisper not found
+The extension looks for Whisper in these locations:
+- `~/whisper.cpp/build/bin/Release/whisper-cli.exe` (Windows)
+- `~/whisper.cpp/whisper-cli` (Linux/macOS)
+- `C:\whisper.cpp\build\bin\Release\whisper-cli.exe` (Windows alternative)
+
+Set a custom path in settings if your installation is elsewhere:
+```json
+{
+  "voiceInTerminal.whisperPath": "/path/to/whisper-cli"
+}
+```
+
+### Microphone not working
+List available audio devices:
+```bash
+# Windows
+sox -t waveaudio -V6 -n
+
+# Linux
+arecord -l
+
+# macOS
+sox -V6 -n
+```
+
+Then set the device name in settings:
+```json
+{
+  "voiceInTerminal.audioDevice": "Microphone (K66)"  // Windows
+  // or
+  "voiceInTerminal.audioDevice": "hw:0,0"            // Linux
+}
+```
+
+### Encoding issues (accents)
+If French accents appear corrupted, make sure:
+1. Your VS Code is set to UTF-8 encoding
+2. You're using Whisper with the `--no-print-colors` flag (automatically added by the extension)
+
+### Permission errors on Windows
+If you get "Access Denied" errors:
+1. Run VS Code as Administrator (right-click → "Run as administrator")
+2. Or grant microphone permissions: Settings → Privacy → Microphone
+
+## 🏗️ Development
+
+### Building from Source
+
+```bash
+# Install dependencies
+npm install
+
+# Compile TypeScript
+npm run compile
+
+# Watch mode (auto-compile on changes)
+npm run watch
+
+# Run tests
+npm test
+
+# Package extension
+npx vsce package
+```
+
+### Running in Development Mode
+
+1. Open the project in VS Code
+2. Press `F5` to start debugging
+3. A new VS Code window opens with the extension loaded
+4. Test the extension in this window
+
+## 📝 Technical Details
+
+### Cross-Platform Signal Handling
+
+The extension uses different approaches to gracefully stop audio recording:
+
+- **Windows**: Uses [`ctrlc-windows`](https://www.npmjs.com/package/ctrlc-windows) to send proper Ctrl+C signals via `GenerateConsoleCtrlEvent`
+- **Linux/macOS**: Uses native POSIX `SIGINT` signals
+
+This ensures WAV file headers are properly finalized on all platforms.
+
+### Architecture
+
+```
+User presses Ctrl+Shift+V
+         ↓
+Status bar shows recording indicator
+         ↓
+SoX records audio → WAV file
+         ↓
+User presses Ctrl+Shift+V again
+         ↓
+SoX stopped gracefully (Ctrl+C signal)
+         ↓
+Whisper.cpp transcribes audio
+         ↓
+Text inserted at cursor position
+         ↓
+WAV file deleted
+```
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Reporting Issues
+
+Found a bug? Have a feature request?
+[Open an issue](https://github.com/YOUR_USERNAME/voice-in-terminal/issues) on GitHub.
+
+## 🙏 Credits
+
+- [whisper.cpp](https://github.com/ggerganov/whisper.cpp) - Fast C++ implementation of OpenAI's Whisper
+- [SoX](http://sox.sourceforge.net/) - Sound eXchange, audio recording tool
+- [ctrlc-windows](https://github.com/thefrontside/ctrlc-windows) - Graceful Ctrl+C for Windows processes
+
+## 🗺️ Roadmap
+
+- [ ] Support for more languages
+- [ ] Option to use OpenAI's Whisper API (for remote/SSH usage)
+- [ ] Preview modal before insertion
+- [ ] Streaming transcription (real-time)
+- [ ] Voice commands (e.g., "new line", "delete all")
+- [ ] Custom wake words
+- [ ] Integration with more terminals (not just editors)
 
 ---
 
-## Validation
-
-### Décisions validées
-
-✅ **Raccourci clavier** : `Ctrl+X` / `Cmd+X` (avec gestion intelligente du conflit Cut)
-✅ **Timeout** : Configurable, par défaut 300 secondes (5 minutes)
-✅ **Mode d'arrêt** : Combinaison raccourci + timeout
-✅ **Interface** : En anglais pour usage international
-✅ **SSH/Remote** : Support via API Whisper (recommandé) ou Whisper local
-✅ **Preview modal** : Optionnel, activable dans v1.1+
-✅ **Installation Whisper** : Automatique proposée au premier lancement
-✅ **Notifications** : Par défaut, seulement les erreurs
-
-### Prêt pour implémentation
-
-Les spécifications sont maintenant complètes et validées. L'implémentation peut commencer avec :
-
-**Phase 1 - v1.0 MVP** :
-1. Structure de base de l'extension VS Code
-2. Enregistrement audio (avec support Remote)
-3. Intégration Whisper API
-4. Insertion dans terminal
-5. Indicateur visuel barre d'état
-
-**Phase 2 - v1.1** :
-1. Support Whisper local (whisper.cpp)
-2. Modal de preview
-3. Mode "Insert & Send"
-
-**Note technique sur Ctrl+X** : L'extension override ce raccourci uniquement quand aucun texte n'est sélectionné, pour éviter les conflits avec la fonctionnalité "Couper" native de VS Code.
+Made with ❤️ for developers who prefer talking to typing
