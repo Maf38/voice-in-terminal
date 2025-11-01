@@ -31,13 +31,13 @@ export class StatusBarManager {
         switch (state) {
             case RecordingState.Idle:
                 this.statusBarItem.text = '$(mic)';
-                this.statusBarItem.tooltip = 'Voice in Terminal: Click or press Ctrl+X to start recording';
+                this.statusBarItem.tooltip = 'Voice in Terminal: Click or press Ctrl+Shift+X to start recording';
                 this.statusBarItem.backgroundColor = undefined;
                 break;
 
             case RecordingState.Recording:
                 this.statusBarItem.text = '$(mic) Recording...';
-                this.statusBarItem.tooltip = 'Voice in Terminal: Recording... (Click or press Ctrl+X to stop)';
+                this.statusBarItem.tooltip = 'Voice in Terminal: Recording... (Click or press Ctrl+Shift+X to stop)';
                 this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
                 this.startPulse();
                 break;

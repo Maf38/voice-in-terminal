@@ -3,6 +3,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
+// Helper function for timestamps
+function timestamp(): string {
+    const now = new Date();
+    const ms = now.getMilliseconds().toString().padStart(3, '0');
+    return `${now.toLocaleTimeString()}.${ms}`;
+}
+
 export interface WhisperConfig {
     mode: 'local' | 'api';
     model: string;
@@ -61,18 +68,51 @@ export class WhisperService {
         }
 
         return new Promise((resolve, reject) => {
+            // DIAGNOSTIC LOGS
+            const ts1 = timestamp();
+            console.log(`[${ts1}] [WhisperService] ========== DIAGNOSTIC START ==========`);
+            console.log(`[${ts1}] [WhisperService] Audio file path: "${audioFilePath}"`);
+            console.log(`[${ts1}] [WhisperService] File exists: ${fs.existsSync(audioFilePath)}`);
+            if (fs.existsSync(audioFilePath)) {
+                const stats = fs.statSync(audioFilePath);
+                console.log(`[${ts1}] [WhisperService] File size: ${stats.size} bytes`);
+
+                // Check file header (OGG or WAV)
+                const fd = fs.openSync(audioFilePath, 'r');
+                const buffer = Buffer.alloc(4);
+                fs.readSync(fd, buffer, 0, 4, 0);
+                fs.closeSync(fd);
+                const headerStr = buffer.toString('utf-8');
+                const isValidOgg = headerStr === 'OggS';
+                const isValidWav = headerStr === 'RIFF';
+                console.log(`[${ts1}] [WhisperService] File header: "${buffer.toString('hex')}" (OGG: ${isValidOgg}, WAV: ${isValidWav})`);
+            }
+            console.log(`[${ts1}] [WhisperService] Whisper executable: "${whisperExec}"`);
+            console.log(`[${ts1}] [WhisperService] Model path: "${this.getModelPath()}"`);
+            console.log(`[${ts1}] [WhisperService] Language: "${this.config.language}"`);
+
+            // Simple approach: read directly from stdout with UTF-8 encoding
             const args = [
                 '-m', this.getModelPath(),
                 '-f', audioFilePath,
                 '-l', this.config.language,
-                '--output-txt',
                 '--no-timestamps'
+                // NO --print-colors: ANSI escape codes corrupt the output
             ];
 
-            console.log(`[WhisperService] Running: ${whisperExec} ${args.join(' ')}`);
+            console.log(`[${ts1}] [WhisperService] Full command: ${whisperExec} ${args.join(' ')}`);
+            console.log(`[${ts1}] [WhisperService] ========== DIAGNOSTIC END ==========`);
 
             const childProcess = cp.spawn(whisperExec, args, {
-                cwd: path.dirname(audioFilePath)
+                cwd: path.dirname(audioFilePath),
+                windowsHide: true,
+                shell: true,  // CRITICAL on Windows for close/exit events to fire properly
+                env: {
+                    ...process.env,
+                    PYTHONIOENCODING: 'utf-8',  // Force UTF-8 for Python-based tools
+                    LANG: 'en_US.UTF-8',        // Force UTF-8 locale
+                    LC_ALL: 'en_US.UTF-8'       // Force UTF-8 for all locale categories
+                }
             }) as cp.ChildProcess;
 
             let stdout = '';
@@ -80,69 +120,99 @@ export class WhisperService {
 
             if (childProcess.stdout) {
                 childProcess.stdout.on('data', (data: Buffer) => {
-                    stdout += data.toString();
+                    const chunk = data.toString('utf-8');
+                    stdout += chunk;
+                    // Log progress to console to keep buffer flowing
+                    if (chunk.includes('whisper_print_timings') || chunk.includes('processing')) {
+                        console.log('[WhisperService] Progress:', chunk.substring(0, 100));
+                    }
                 });
             }
 
             if (childProcess.stderr) {
                 childProcess.stderr.on('data', (data: Buffer) => {
-                    stderr += data.toString();
+                    const chunk = data.toString('utf-8');
+                    stderr += chunk;
+                    // Log stderr to keep buffer flowing
+                    console.log('[WhisperService] Stderr chunk:', chunk.substring(0, 100));
                 });
             }
 
+            // Add timeout (30 seconds)
+            const timeout = setTimeout(() => {
+                console.error('[WhisperService] Transcription timeout after 30s');
+                childProcess.kill();
+                reject(new Error('Transcription timeout. Please try again.'));
+            }, 30000);
+
             childProcess.on('close', (code: number | null) => {
+                clearTimeout(timeout);
+
+                const ts = timestamp();
+                console.log(`[${ts}] [WhisperService] Process closed with code: ${code}`);
+                console.log(`[${ts}] [WhisperService] Stdout length: ${stdout.length}`);
+                console.log(`[${ts}] [WhisperService] Stderr length: ${stderr.length}`);
+
+                // Extract transcription directly from stdout (UTF-8 encoded)
                 if (code !== 0) {
-                    console.error(`[WhisperService] Error: ${stderr}`);
-                    reject(new Error(`Whisper transcription failed with code ${code}`));
+                    console.error(`[WhisperService] Process failed with code ${code}`);
+                    console.log('[WhisperService] Stderr:', stderr.substring(0, 500));
+                    reject(new Error('Transcription failed. Please try again.'));
                     return;
                 }
 
-                // whisper.cpp writes output to a .txt file
-                const txtFile = audioFilePath.replace('.wav', '.wav.txt');
+                const transcription = this.extractTranscriptionFromOutput(stdout);
 
-                if (fs.existsSync(txtFile)) {
-                    try {
-                        const transcription = fs.readFileSync(txtFile, 'utf-8').trim();
-
-                        // Clean up the txt file
-                        fs.unlinkSync(txtFile);
-
-                        if (transcription.length === 0) {
-                            reject(new Error('Transcription is empty. No speech detected.'));
-                        } else {
-                            console.log(`[WhisperService] Transcription: "${transcription}"`);
-                            resolve(transcription);
-                        }
-                    } catch (error) {
-                        reject(new Error(`Failed to read transcription: ${error}`));
-                    }
+                if (transcription && transcription.length > 0) {
+                    console.log(`[WhisperService] Transcription: "${transcription}"`);
+                    resolve(transcription);
                 } else {
-                    // Try to extract from stdout if txt file wasn't created
-                    const transcription = this.extractTranscriptionFromOutput(stdout);
-                    if (transcription) {
-                        resolve(transcription);
-                    } else {
-                        reject(new Error('No transcription output found'));
-                    }
+                    console.error('[WhisperService] No transcription found in stdout');
+                    console.log('[WhisperService] Full stdout:', stdout.substring(0, 500));
+                    console.log('[WhisperService] Full stderr:', stderr.substring(0, 500));
+                    reject(new Error('No transcription found in output. Please try again.'));
                 }
             });
 
             childProcess.on('error', (error: Error) => {
+                clearTimeout(timeout);
                 reject(new Error(`Failed to start Whisper: ${error.message}`));
             });
         });
     }
 
     private extractTranscriptionFromOutput(output: string): string | null {
-        // Try to extract text from whisper output
-        const lines = output.split('\n');
-        for (let i = lines.length - 1; i >= 0; i--) {
-            const line = lines[i].trim();
-            if (line.length > 0 && !line.startsWith('[') && !line.includes('whisper')) {
-                return line;
+        // Remove ANSI color codes (support all formats)
+        const cleanOutput = output.replace(/\[\d+;\d+;\d+m|\[\d+m/g, '');
+
+        // Whisper-cli prints transcription to stdout (separate from stderr debug info)
+        // Look for non-empty lines that aren't debug messages
+        const lines = cleanOutput.split('\n');
+        let transcriptionLines: string[] = [];
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+
+            // Skip debug/system info lines, empty lines, and Whisper markers
+            if (trimmed.length === 0 ||
+                trimmed.startsWith('whisper_') ||
+                trimmed.startsWith('system_info') ||
+                trimmed.startsWith('main:') ||
+                trimmed.includes('processing') ||
+                trimmed.includes('color scheme') ||
+                trimmed.includes('output_') ||
+                trimmed === '[Musique]' ||  // Filter Whisper's "no speech" marker (French)
+                trimmed === '[Music]' ||     // Filter English version
+                trimmed === '[BLANK_AUDIO]') {  // Filter other common markers
+                continue;
             }
+
+            // This is likely transcription
+            transcriptionLines.push(trimmed);
         }
-        return null;
+
+        const result = transcriptionLines.join(' ').trim();
+        return result.length > 0 ? result : null;
     }
 
     private async findWhisperExecutable(): Promise<string | null> {
@@ -150,15 +220,21 @@ export class WhisperService {
 
         // Try common locations for whisper.cpp
         const possiblePaths = isWindows ? [
-            // Windows paths
+            // Windows paths - prefer whisper-cli.exe (new) over main.exe (deprecated)
+            path.join(os.homedir(), 'whisper.cpp', 'build', 'bin', 'Release', 'whisper-cli.exe'),
+            path.join(os.homedir(), 'whisper.cpp', 'build', 'Release', 'whisper-cli.exe'),
+            path.join(os.homedir(), 'whisper.cpp', 'whisper-cli.exe'),
+            'C:\\whisper.cpp\\build\\bin\\Release\\whisper-cli.exe',
+            path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'whisper.cpp', 'whisper-cli.exe'),
+            // Fallback to deprecated main.exe
             path.join(os.homedir(), 'whisper.cpp', 'main.exe'),
             path.join(os.homedir(), 'whisper.cpp', 'build', 'bin', 'Release', 'main.exe'),
             path.join(os.homedir(), 'whisper.cpp', 'build', 'Release', 'main.exe'),
             'C:\\whisper.cpp\\main.exe',
-            'C:\\whisper.cpp\\build\\bin\\Release\\main.exe',
-            path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'whisper.cpp', 'main.exe')
+            'C:\\whisper.cpp\\build\\bin\\Release\\main.exe'
         ] : [
             // Linux/macOS paths
+            path.join(os.homedir(), 'whisper.cpp', 'whisper-cli'),
             path.join(os.homedir(), 'whisper.cpp', 'main'),
             path.join(os.homedir(), '.local', 'bin', 'whisper'),
             '/usr/local/bin/whisper',

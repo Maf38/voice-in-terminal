@@ -9,21 +9,26 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "voiceInTerminal.toggleRecording",
         "title": "Voice in Terminal: Toggle Recording"
+      },
+      {
+        "command": "voiceInTerminal.selectAudioDevice",
+        "title": "Voice in Terminal: Select Audio Device"
       }
     ],
     "keybindings": [
       {
         "command": "voiceInTerminal.toggleRecording",
-        "key": "ctrl+x",
-        "mac": "cmd+x",
-        "when": "!editorHasSelection"
+        "key": "ctrl+shift+x",
+        "mac": "cmd+shift+x"
       }
     ],
     "configuration": {
@@ -42,14 +47,23 @@
         "voiceInTerminal.whisperMode": {
           "type": "string",
           "default": "local",
-          "enum": ["local", "api"],
+          "enum": [
+            "local",
+            "api"
+          ],
           "description": "Use local Whisper installation or OpenAI API"
         },
         "voiceInTerminal.whisperModel": {
           "type": "string",
-          "default": "base",
-          "enum": ["tiny", "base", "small", "medium", "large"],
-          "description": "Whisper model to use (local mode only)"
+          "default": "tiny",
+          "enum": [
+            "tiny",
+            "base",
+            "small",
+            "medium",
+            "large"
+          ],
+          "description": "Whisper model to use (local mode only). Tiny is recommended for best performance (~2-3x faster than base)."
         },
         "voiceInTerminal.whisperApiKey": {
           "type": "string",
@@ -64,7 +78,11 @@
         "voiceInTerminal.showNotifications": {
           "type": "string",
           "default": "errors",
-          "enum": ["all", "errors", "none"],
+          "enum": [
+            "all",
+            "errors",
+            "none"
+          ],
           "description": "When to show notifications"
         },
         "voiceInTerminal.autoCapitalize": {
@@ -85,7 +103,7 @@
         "voiceInTerminal.audioDeviceName": {
           "type": "string",
           "default": "",
-          "description": "Audio input device name for Windows (e.g., 'Microphone (K66)'). Leave empty to use default device. Use 'sox -V6 -n -t waveaudio test' to list devices."
+          "markdownDescription": "Audio input device name for Windows (e.g., 'Microphone (K66)'). Leave empty to use K66 as default. Click the command palette and run **Voice in Terminal: Select Audio Device** to choose from available devices."
         }
       }
     }
@@ -107,6 +125,7 @@
     "typescript": "^5.3.0"
   },
   "dependencies": {
+    "ctrlc-windows": "^2.2.0",
     "node-record-lpcm16": "^1.0.1"
   }
 }

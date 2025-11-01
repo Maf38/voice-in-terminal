@@ -7,6 +7,7 @@ let audioRecorder: AudioRecorder | null = null;
 let whisperService: WhisperService | null = null;
 let statusBarManager: StatusBarManager | null = null;
 let recordingTimeout: NodeJS.Timeout | null = null;
+let focusBeforeRecording: vscode.TextEditor | undefined = undefined;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('[VoiceInTerminal] Extension activated');
@@ -14,6 +15,20 @@ export function activate(context: vscode.ExtensionContext) {
     // Initialize status bar
     statusBarManager = new StatusBarManager();
     context.subscriptions.push(statusBarManager);
+
+    // Track the last active text editor to restore focus later
+    // This allows users to click the status bar button without losing focus
+    const editorChangeListener = vscode.window.onDidChangeActiveTextEditor((editor) => {
+        if (editor) {
+            focusBeforeRecording = editor;
+        }
+    });
+    context.subscriptions.push(editorChangeListener);
+
+    // Initialize with current active editor
+    if (vscode.window.activeTextEditor) {
+        focusBeforeRecording = vscode.window.activeTextEditor;
+    }
 
     // Register toggle recording command
     const toggleCommand = vscode.commands.registerCommand(
@@ -23,7 +38,15 @@ export function activate(context: vscode.ExtensionContext) {
         }
     );
 
-    context.subscriptions.push(toggleCommand);
+    // Register select audio device command
+    const selectDeviceCommand = vscode.commands.registerCommand(
+        'voiceInTerminal.selectAudioDevice',
+        async () => {
+            await selectAudioDevice();
+        }
+    );
+
+    context.subscriptions.push(toggleCommand, selectDeviceCommand);
 
     // Check Whisper installation on activation
     checkWhisperInstallation();
@@ -57,6 +80,9 @@ async function startRecording() {
     }
 
     try {
+        // Note: focusBeforeRecording is already tracked by onDidChangeActiveTextEditor listener
+        // This allows users to click the status bar button without losing the focus context
+
         const config = vscode.workspace.getConfiguration('voiceInTerminal');
         const maxRecordingTime = config.get<number>('maxRecordingTime', 300);
         const audioDeviceName = config.get<string>('audioDeviceName', '');
@@ -189,20 +215,78 @@ function postProcessTranscription(text: string): string {
 }
 
 async function insertIntoTerminal(text: string): Promise<void> {
-    // Get the active terminal
-    let terminal = vscode.window.activeTerminal;
+    // Copy transcription to clipboard
+    await vscode.env.clipboard.writeText(text);
 
-    // If no active terminal, create one
-    if (!terminal) {
-        terminal = vscode.window.createTerminal('Claude Code');
-        terminal.show();
+    // Restore focus to the editor that was active before recording started
+    if (focusBeforeRecording) {
+        await vscode.window.showTextDocument(focusBeforeRecording.document, {
+            viewColumn: focusBeforeRecording.viewColumn,
+            preserveFocus: false
+        });
     }
 
-    // Send the text to the terminal (without pressing Enter)
-    terminal.sendText(text, false);
+    // Small delay to ensure focus is restored
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-    // Make sure the terminal is visible
-    terminal.show(false); // false = don't steal focus
+    // Automatically paste the text into the active editor/input field
+    // This simulates Ctrl+V / Cmd+V
+    await vscode.commands.executeCommand('editor.action.clipboardPasteAction');
+}
+
+async function selectAudioDevice() {
+    try {
+        // Show loading message
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: 'Voice in Terminal: Enumerating audio devices...',
+                cancellable: false
+            },
+            async (progress) => {
+                // Enumerate devices
+                const devices = await AudioRecorder.enumerateAudioDevices();
+
+                if (devices.length === 0) {
+                    vscode.window.showWarningMessage(
+                        'Voice in Terminal: No audio input devices found. Make sure SoX is installed and microphones are connected.'
+                    );
+                    return;
+                }
+
+                // Create QuickPick items
+                const items = devices.map(device => ({
+                    label: device.name,
+                    description: `Device ${device.index}`,
+                    detail: device.index === -1 ? 'System default' : undefined,
+                    deviceName: device.name
+                }));
+
+                // Show QuickPick
+                const selected = await vscode.window.showQuickPick(items, {
+                    placeHolder: 'Select your audio input device',
+                    title: 'Voice in Terminal - Audio Device Selection'
+                });
+
+                if (selected) {
+                    // Save to settings
+                    await vscode.workspace.getConfiguration('voiceInTerminal')
+                        .update('audioDeviceName', selected.deviceName, vscode.ConfigurationTarget.Global);
+
+                    vscode.window.showInformationMessage(
+                        `Voice in Terminal: Audio device set to "${selected.deviceName}"`
+                    );
+                }
+            }
+        );
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error('[VoiceInTerminal] Failed to enumerate audio devices:', errorMessage);
+
+        vscode.window.showErrorMessage(
+            `Voice in Terminal: Failed to enumerate audio devices. ${errorMessage}`
+        );
+    }
 }
 
 async function checkWhisperInstallation() {

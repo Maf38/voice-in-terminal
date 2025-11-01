@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"C:\\Users\\mafal\\whisper.cpp\\build\\bin\\Release\\whisper-cli.exe\")",
+      "Bash(tasklist:*)",
+      "Bash(dir:*)",
+      "Bash(powershell \"tasklist /FI ''IMAGENAME eq sox.exe''\")",
+      "Bash(powershell \"taskkill /F /IM sox.exe\")",
+      "Bash(npm run compile:*)",
+      "Bash(awk:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
