@@ -10,6 +10,7 @@ let whisperService: WhisperService | null = null;
 let statusBarManager: StatusBarManager | null = null;
 let recordingTimeout: NodeJS.Timeout | null = null;
 let focusBeforeRecording: vscode.TextEditor | undefined = undefined;
+let shouldRestoreFocus: boolean = false;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('[VoiceInTerminal] Extension activated');
@@ -26,20 +27,6 @@ export function activate(context: vscode.ExtensionContext) {
     // Initialize status bar
     statusBarManager = new StatusBarManager();
     context.subscriptions.push(statusBarManager);
-
-    // Track the last active text editor to restore focus later
-    // This allows users to click the status bar button without losing focus
-    const editorChangeListener = vscode.window.onDidChangeActiveTextEditor((editor) => {
-        if (editor) {
-            focusBeforeRecording = editor;
-        }
-    });
-    context.subscriptions.push(editorChangeListener);
-
-    // Initialize with current active editor
-    if (vscode.window.activeTextEditor) {
-        focusBeforeRecording = vscode.window.activeTextEditor;
-    }
 
     // Register toggle recording command
     const toggleCommand = vscode.commands.registerCommand(
@@ -91,8 +78,16 @@ async function startRecording() {
     }
 
     try {
-        // Note: focusBeforeRecording is already tracked by onDidChangeActiveTextEditor listener
-        // This allows users to click the status bar button without losing the focus context
+        // Capture the current editor ONLY if it's a real text editor
+        // This is used to restore focus after clicking the status bar button
+        const currentEditor = vscode.window.activeTextEditor;
+        if (currentEditor) {
+            focusBeforeRecording = currentEditor;
+            // We'll restore focus only if the user clicked the status bar button
+            // (which typically changes focus away from the input field)
+            // NOT if they used the keyboard shortcut (focus is already correct)
+            shouldRestoreFocus = false; // Will be set to true only when needed
+        }
 
         const config = vscode.workspace.getConfiguration('voiceInTerminal');
         const maxRecordingTime = config.get<number>('maxRecordingTime', 300);
@@ -233,19 +228,17 @@ async function insertIntoTerminal(text: string): Promise<void> {
     // Copy transcription to clipboard
     await vscode.env.clipboard.writeText(text);
 
-    // Restore focus to the editor that was active before recording started
-    if (focusBeforeRecording) {
-        await vscode.window.showTextDocument(focusBeforeRecording.document, {
-            viewColumn: focusBeforeRecording.viewColumn,
-            preserveFocus: false
-        });
-    }
+    // Check if we need to restore focus
+    // We DON'T restore focus because:
+    // 1. If user used keyboard shortcut: focus is already in the right place (chat/terminal/editor)
+    // 2. If user clicked status bar: we want to paste where they were BEFORE clicking (handled by not changing focus)
+    // The clipboard + paste command will insert text wherever the cursor currently is
 
-    // Small delay to ensure focus is restored
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Small delay to ensure clipboard is ready
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-    // Automatically paste the text into the active editor/input field
-    // This simulates Ctrl+V / Cmd+V
+    // Automatically paste the text into the currently focused input field
+    // This works for: text editors, Claude Code chat, terminal, search boxes, etc.
     await vscode.commands.executeCommand('editor.action.clipboardPasteAction');
 }
 

@@ -17,3 +17,5 @@ CLAUDE.MD
 PUBLISHING.md
 node_modules/**/.bin/**
 .DS_Store
+.env
+*.wav
