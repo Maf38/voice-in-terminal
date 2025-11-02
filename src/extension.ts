@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 import { AudioRecorder } from './audioRecorder';
 import { WhisperService, WhisperConfig } from './whisperService';
 import { StatusBarManager, RecordingState } from './statusBar';
@@ -11,6 +13,15 @@ let focusBeforeRecording: vscode.TextEditor | undefined = undefined;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('[VoiceInTerminal] Extension activated');
+
+    // Load .env file from workspace root (contains OpenAI API key)
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+        const workspaceRoot = workspaceFolders[0].uri.fsPath;
+        const envPath = path.join(workspaceRoot, '.env');
+        dotenv.config({ path: envPath });
+        console.log('[VoiceInTerminal] Loaded .env from:', envPath);
+    }
 
     // Initialize status bar
     statusBarManager = new StatusBarManager();
@@ -146,11 +157,15 @@ async function stopRecordingAndTranscribe() {
         // Initialize Whisper if needed
         if (!whisperService) {
             const config = vscode.workspace.getConfiguration('voiceInTerminal');
+
+            // Get API key from .env file (environment variable) or VS Code settings
+            const apiKey = process.env.OPENAI_API_KEY || config.get<string>('whisperApiKey', '');
+
             const whisperConfig: WhisperConfig = {
                 mode: config.get<'local' | 'api'>('whisperMode', 'local'),
                 model: config.get<string>('whisperModel', 'base'),
                 language: config.get<string>('language', 'fr'),
-                apiKey: config.get<string>('whisperApiKey', '')
+                apiKey: apiKey
             };
 
             whisperService = new WhisperService(whisperConfig);
@@ -291,11 +306,15 @@ async function selectAudioDevice() {
 
 async function checkWhisperInstallation() {
     const config = vscode.workspace.getConfiguration('voiceInTerminal');
+
+    // Get API key from .env file (environment variable) or VS Code settings
+    const apiKey = process.env.OPENAI_API_KEY || config.get<string>('whisperApiKey', '');
+
     const whisperConfig: WhisperConfig = {
         mode: config.get<'local' | 'api'>('whisperMode', 'local'),
         model: config.get<string>('whisperModel', 'base'),
         language: config.get<string>('language', 'fr'),
-        apiKey: config.get<string>('whisperApiKey', '')
+        apiKey: apiKey
     };
 
     const tempWhisperService = new WhisperService(whisperConfig);

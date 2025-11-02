@@ -10,7 +10,10 @@
       "Bash(awk:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nfeat: MVP Voice in Terminal - Transcription vocale fonctionnelle\n\n## Fonctionnalités implémentées\n- ✅ Enregistrement audio avec SoX (Windows waveaudio driver)\n- ✅ Transcription locale avec whisper.cpp (modèle tiny français)\n- ✅ Insertion automatique du texte transcrit dans l''éditeur actif\n- ✅ Indicateur visuel dans la barre d''état VS Code\n- ✅ Raccourci clavier configurable (Ctrl+Shift+V par défaut)\n- ✅ Support UTF-8 complet pour le français (é, è, ê, à, etc.)\n- ✅ Solution cross-platform pour arrêt gracieux de SoX\n\n## Correctifs techniques majeurs\n- Package ctrlc-windows pour signal Ctrl+C propre sur Windows\n- Terminaison gracieuse de SoX pour headers WAV valides\n- Nettoyage des codes ANSI de Whisper pour UTF-8 correct\n- Utilisation de l''événement ''exit'' au lieu de ''close'' dans Extension Host\n- Tracking automatique du focus éditeur pour paste\n\n## Dépendances ajoutées\n- ctrlc-windows: Envoi de signaux Ctrl+C sur Windows\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm install:*)",
+      "Bash(vsce package:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

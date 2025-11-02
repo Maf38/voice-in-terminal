@@ -11,7 +11,10 @@
       "outFiles": [
         "${workspaceFolder}/out/**/*.js"
       ],
-      "preLaunchTask": "${defaultBuildTask}"
+      "preLaunchTask": "${defaultBuildTask}",
+      "env": {
+        "OPENAI_API_KEY": "your-openai-api-key-here"
+      }
     }
   ]
 }

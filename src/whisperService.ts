@@ -56,9 +56,52 @@ export class WhisperService {
     }
 
     private async transcribeWithAPI(audioFilePath: string): Promise<string> {
-        // For now, we'll implement a placeholder
-        // In a real implementation, we'd use the OpenAI API
-        throw new Error('API mode not yet implemented. Please use local mode or contribute API implementation!');
+        if (!this.config.apiKey) {
+            throw new Error('OpenAI API key is required for API mode');
+        }
+
+        try {
+            // Dynamic import of OpenAI SDK
+            const { default: OpenAI } = await import('openai');
+
+            const openai = new OpenAI({
+                apiKey: this.config.apiKey
+            });
+
+            console.log('[WhisperService] Transcribing with OpenAI API...');
+            console.log('[WhisperService] Audio file:', audioFilePath);
+            console.log('[WhisperService] Language:', this.config.language);
+
+            // Read the audio file
+            const audioFile = fs.createReadStream(audioFilePath);
+
+            // Call OpenAI Whisper API
+            const transcription = await openai.audio.transcriptions.create({
+                file: audioFile,
+                model: 'whisper-1',
+                language: this.config.language,
+                response_format: 'text'
+            });
+
+            console.log('[WhisperService] API transcription successful');
+
+            // The response is a string when using response_format: 'text'
+            return transcription.trim();
+
+        } catch (error: any) {
+            console.error('[WhisperService] API transcription failed:', error);
+
+            // Provide user-friendly error messages
+            if (error.code === 'invalid_api_key') {
+                throw new Error('Invalid OpenAI API key. Please check your settings.');
+            } else if (error.code === 'insufficient_quota') {
+                throw new Error('OpenAI API quota exceeded. Please check your billing.');
+            } else if (error.message) {
+                throw new Error(`OpenAI API error: ${error.message}`);
+            } else {
+                throw new Error('Failed to transcribe audio with OpenAI API');
+            }
+        }
     }
 
     private async transcribeLocally(audioFilePath: string): Promise<string> {
